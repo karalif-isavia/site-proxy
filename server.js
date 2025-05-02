@@ -31,6 +31,47 @@ app.get('/datis', async (req, res) => {
   }
 });
 
+// ViewMondo route
+app.get('/viewmondo', async (req, res) => {
+  try {
+    const tokenResponse = await fetch('https://viewmondo.com/Token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'password',
+        username: process.env.VIEWMONDO_USERNAME,
+        password: process.env.VIEWMONDO_PASSWORD
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      console.error('ViewMondo token error:', await tokenResponse.text());
+      return res.status(401).json({ error: 'Failed to get ViewMondo token' });
+    }
+
+    const { access_token } = await tokenResponse.json();
+
+    const dataResponse = await fetch('https://viewmondo.com/api/v1/GetStationsWithLastData', {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    if (!dataResponse.ok) {
+      console.error('ViewMondo data fetch error:', await dataResponse.text());
+      return res.status(500).json({ error: 'Failed to fetch ViewMondo data' });
+    }
+
+    const data = await dataResponse.json();
+    res.json(data);
+  } catch (err) {
+    console.error('ViewMondo proxy error:', err);
+    res.status(500).json({ error: 'Unexpected error accessing ViewMondo' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
 });
