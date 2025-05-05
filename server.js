@@ -68,12 +68,13 @@ app.get('/viewmondo/:runway', async (req, res) => {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${access_token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        stationId: match.StationId,
-        start,
-        end
+        StationId: match.StationId, 
+        Start: start,
+        End: end
       })
     });
 
