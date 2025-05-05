@@ -54,7 +54,7 @@ app.get('/viewmondo/:runway', async (req, res) => {
 
     const stations = await stationsResponse.json();
     const match = stations.find(s =>
-      s.StationName.toUpperCase().includes('19')
+      s.StationName.toUpperCase().includes('28')
     );
     if (!match) {
       return res.status(404).json({ error: `Station '${runway}' not found` });
