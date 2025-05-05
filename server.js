@@ -32,13 +32,11 @@ app.get('/datis', async (req, res) => {
 });
 
 // ViewMondo route
-app.get('/viewmondo', async (req, res) => {
+app.get('/viewmondo/rwy10', async (req, res) => {
   try {
     const tokenResponse = await fetch('https://viewmondo.com/Token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'password',
         username: process.env.VIEWMONDO_USERNAME,
@@ -46,31 +44,31 @@ app.get('/viewmondo', async (req, res) => {
       })
     });
 
-    if (!tokenResponse.ok) {
-      console.error('ViewMondo token error:', await tokenResponse.text());
-      return res.status(401).json({ error: 'Failed to get ViewMondo token' });
-    }
-
     const { access_token } = await tokenResponse.json();
 
-    const dataResponse = await fetch('https://viewmondo.com/api/v1/GetStationsWithLastData', {
-      headers: {
-        Authorization: `Bearer ${access_token}`
-      }
+    // STEP 1: Get all stations and find RWY 10
+    const stationsResponse = await fetch('https://viewmondo.com/api/v1/GetStations', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+    const stations = await stationsResponse.json();
+    const rwy10 = stations.find(s => s.StationName === 'RWY 10');
+
+    if (!rwy10) return res.status(404).json({ error: 'RWY 10 not found' });
+
+    // STEP 2: Fetch last measure values for that station
+    const measuresResponse = await fetch(`https://viewmondo.com/api/v1/GetLastMeasureValues?stationId=${rwy10.StationId}`, {
+      headers: { Authorization: `Bearer ${access_token}` }
     });
 
-    if (!dataResponse.ok) {
-      console.error('ViewMondo data fetch error:', await dataResponse.text());
-      return res.status(500).json({ error: 'Failed to fetch ViewMondo data' });
-    }
+    const measures = await measuresResponse.json();
+    res.json({ station: rwy10, measures });
 
-    const data = await dataResponse.json();
-    res.json(data);
   } catch (err) {
-    console.error('ViewMondo proxy error:', err);
-    res.status(500).json({ error: 'Unexpected error accessing ViewMondo' });
+    console.error('ViewMondo error:', err);
+    res.status(500).json({ error: 'Failed to get ViewMondo RWY10 data' });
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
