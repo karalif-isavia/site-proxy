@@ -32,7 +32,9 @@ app.get('/datis', async (req, res) => {
 });
 
 // ViewMondo route
-app.get('/viewmondo/rwy10', async (req, res) => {
+app.get('/viewmondo/:runway', async (req, res) => {
+  const runway = req.params.runway.toUpperCase();
+
   try {
     const tokenResponse = await fetch('https://viewmondo.com/Token', {
       method: 'POST',
@@ -46,34 +48,26 @@ app.get('/viewmondo/rwy10', async (req, res) => {
 
     const { access_token } = await tokenResponse.json();
 
-    // STEP 1: Get all stations
     const stationsResponse = await fetch('https://viewmondo.com/api/v1/GetStations', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
     const stations = await stationsResponse.json();
 
-    // STEP 2: Find RWY 10 (case-insensitive match just in case)
-    const rwy10 = stations.find(s => s.StationName.includes('19'));
+    const match = stations.find(s => s.StationName.toUpperCase().includes(runway));
+    if (!match) return res.status(404).json({ error: `Station ${runway} not found` });
 
-    if (!rwy10) {
-      console.error("RWY 10 station not found");
-      return res.status(404).json({ error: 'RWY 10 not found' });
-    }
-
-    // STEP 3: Fetch last measure values
-    const measuresResponse = await fetch(`https://viewmondo.com/api/v1/GetLastMeasureValues?stationId=${rwy10.StationId}`, {
-      headers: { Authorization: `Bearer ${access_token}` }
-    });
+    const measuresResponse = await fetch(
+      `https://viewmondo.com/api/v1/GetLastMeasureValues?stationId=${match.StationId}`,
+      { headers: { Authorization: `Bearer ${access_token}` } }
+    );
 
     const measures = await measuresResponse.json();
-    res.json({ station: rwy10, measures });
-
+    res.json({ station: match, measures });
   } catch (err) {
-    console.error('ViewMondo proxy error:', err);
-    res.status(500).json({ error: 'Failed to get ViewMondo RWY10 data' });
+    console.error('ViewMondo error:', err);
+    res.status(500).json({ error: 'Failed to get ViewMondo data' });
   }
 });
-
 
 
 app.listen(PORT, () => {
