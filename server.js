@@ -53,7 +53,7 @@ app.get('/viewmondo/rwy10', async (req, res) => {
     const stations = await stationsResponse.json();
 
     // STEP 2: Find RWY 10 (case-insensitive match just in case)
-    const rwy10 = stations.find(s => s.StationName.includes('28'));
+    const rwy10 = stations.find(s => s.StationName.includes('19'));
 
     if (!rwy10) {
       console.error("RWY 10 station not found");
