@@ -64,12 +64,18 @@ app.get('/viewmondo/:runway', async (req, res) => {
     const end = now.toISOString();
     const start = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
 
-    const measuresResponse = await fetch(
-      `https://viewmondo.com/api/v1/GetMeasureValues?stationId=${match.StationId}&start=${start}&end=${end}`,
-      {
-        headers: { Authorization: `Bearer ${access_token}` }
-      }
-    );
+    const measuresResponse = await fetch('https://viewmondo.com/api/v1/GetMeasureValues', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        stationId: match.StationId,
+        start,
+        end
+      })
+    });
 
     const measures = await measuresResponse.json();
 
