@@ -48,48 +48,28 @@ app.get('/viewmondo/:runway', async (req, res) => {
 
     const { access_token } = await tokenResponse.json();
 
-    const stationsResponse = await fetch('https://viewmondo.com/api/v1/GetStations', {
+    // 🔁 Use GetStationsWithLastData
+    const stationsResponse = await fetch('https://viewmondo.com/api/v1/GetStationsWithLastData', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
 
     const stations = await stationsResponse.json();
     const match = stations.find(s =>
-      s.StationName.toUpperCase().includes('RWY 28')
+      s.StationName.toUpperCase().includes(runway)
     );
+
     if (!match) {
       return res.status(404).json({ error: `Station '${runway}' not found` });
     }
 
-    const now = new Date();
-    const end = now.toISOString();
-    const start = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
-
-    const measuresResponse = await fetch('https://viewmondo.com/api/v1/GetMeasureValues', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        StationId: match.StationId, 
-        Start: start,
-        End: end
-      })
-    });
-
-    const measures = await measuresResponse.json();
-
-    res.json({
-      station: match,
-      measures
-    });
+    res.json({ station: match }); // All sensor data is inside match.SensorChannelInfo
 
   } catch (err) {
     console.error('ViewMondo error:', err);
     res.status(500).json({ error: 'Failed to get ViewMondo data' });
   }
 });
+
 
 
 
