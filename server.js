@@ -46,16 +46,21 @@ app.get('/viewmondo/rwy10', async (req, res) => {
 
     const { access_token } = await tokenResponse.json();
 
-    // STEP 1: Get all stations and find RWY 10
+    // STEP 1: Get all stations
     const stationsResponse = await fetch('https://viewmondo.com/api/v1/GetStations', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
     const stations = await stationsResponse.json();
-    const rwy10 = stations.find(s => s.StationName === 'RWY 10');
 
-    if (!rwy10) return res.status(404).json({ error: 'RWY 10 not found' });
+    // STEP 2: Find RWY 10 (case-insensitive match just in case)
+    const rwy10 = stations.find(s => s.StationName.trim().toUpperCase() === 'RWY 10');
 
-    // STEP 2: Fetch last measure values for that station
+    if (!rwy10) {
+      console.error("RWY 10 station not found");
+      return res.status(404).json({ error: 'RWY 10 not found' });
+    }
+
+    // STEP 3: Fetch last measure values
     const measuresResponse = await fetch(`https://viewmondo.com/api/v1/GetLastMeasureValues?stationId=${rwy10.StationId}`, {
       headers: { Authorization: `Bearer ${access_token}` }
     });
@@ -64,10 +69,11 @@ app.get('/viewmondo/rwy10', async (req, res) => {
     res.json({ station: rwy10, measures });
 
   } catch (err) {
-    console.error('ViewMondo error:', err);
+    console.error('ViewMondo proxy error:', err);
     res.status(500).json({ error: 'Failed to get ViewMondo RWY10 data' });
   }
 });
+
 
 
 app.listen(PORT, () => {
