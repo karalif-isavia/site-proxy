@@ -36,7 +36,6 @@ app.get('/viewmondo/:runway', async (req, res) => {
   const runway = req.params.runway.toUpperCase();
 
   try {
-    // Step 1: Authenticate
     const tokenResponse = await fetch('https://viewmondo.com/Token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -47,15 +46,8 @@ app.get('/viewmondo/:runway', async (req, res) => {
       })
     });
 
-    if (!tokenResponse.ok) {
-      const errText = await tokenResponse.text();
-      console.error('ViewMondo token error:', errText);
-      return res.status(401).json({ error: 'Failed to get ViewMondo token' });
-    }
-
     const { access_token } = await tokenResponse.json();
 
-    // Step 2: Get stations and find the requested one
     const stationsResponse = await fetch('https://viewmondo.com/api/v1/GetStations', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
@@ -64,14 +56,12 @@ app.get('/viewmondo/:runway', async (req, res) => {
     const match = stations.find(s => s.StationName.toUpperCase().includes(runway));
 
     if (!match) {
-      console.error(`Station matching '${runway}' not found`);
       return res.status(404).json({ error: `Station '${runway}' not found` });
     }
 
-    // Step 3: Get 2 hours of historical data
     const now = new Date();
     const end = now.toISOString();
-    const start = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(); // 2 hours ago
+    const start = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
 
     const measuresResponse = await fetch(
       `https://viewmondo.com/api/v1/GetMeasureValues?stationId=${match.StationId}&start=${start}&end=${end}`,
@@ -79,12 +69,6 @@ app.get('/viewmondo/:runway', async (req, res) => {
         headers: { Authorization: `Bearer ${access_token}` }
       }
     );
-
-    if (!measuresResponse.ok) {
-      const errText = await measuresResponse.text();
-      console.error('ViewMondo data fetch error:', errText);
-      return res.status(500).json({ error: 'Failed to fetch measurement data' });
-    }
 
     const measures = await measuresResponse.json();
 
@@ -94,10 +78,11 @@ app.get('/viewmondo/:runway', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Unexpected ViewMondo error:', err);
-    res.status(500).json({ error: 'Unexpected error accessing ViewMondo' });
+    console.error('ViewMondo error:', err);
+    res.status(500).json({ error: 'Failed to get ViewMondo data' });
   }
 });
+
 
 
 app.listen(PORT, () => {
