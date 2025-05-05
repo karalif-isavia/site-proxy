@@ -32,9 +32,7 @@ app.get('/datis', async (req, res) => {
 });
 
 // ViewMondo route
-app.get('/viewmondo/:runway', async (req, res) => {
-  const runway = req.params.runway.toUpperCase();
-
+app.get('/viewmondo/rwy28', async (req, res) => {
   try {
     const tokenResponse = await fetch('https://viewmondo.com/Token', {
       method: 'POST',
@@ -48,27 +46,27 @@ app.get('/viewmondo/:runway', async (req, res) => {
 
     const { access_token } = await tokenResponse.json();
 
-    // 🔁 Use GetStationsWithLastData
     const stationsResponse = await fetch('https://viewmondo.com/api/v1/GetStationsWithLastData', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
 
     const stations = await stationsResponse.json();
-    const match = stations.find(s =>
-      s.StationName.toUpperCase().includes(runway)
-    );
+
+    // 🔍 Hardcoded match for RWY 28
+    const match = stations.find(s => s.StationName.toUpperCase().includes("RWY 28"));
 
     if (!match) {
-      return res.status(404).json({ error: `Station '${runway}' not found` });
+      return res.status(404).json({ error: `Station 'RWY 28' not found` });
     }
 
-    res.json({ station: match }); // All sensor data is inside match.SensorChannelInfo
+    res.json({ station: match }); // Includes SensorChannelInfo with values
 
   } catch (err) {
     console.error('ViewMondo error:', err);
     res.status(500).json({ error: 'Failed to get ViewMondo data' });
   }
 });
+
 
 
 
