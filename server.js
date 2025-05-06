@@ -22,7 +22,7 @@ app.get('/weather', async (req, res) => {
 // DATIS route (BIKF ATIS via ARINC)
 app.get('/datis', async (req, res) => {
   try {
-    const response = await fetch('https://webdatis.arinc.net/cgi-bin/datis/get_datis?station=BIKF&sessionId=HY618U7T&products=DATIS&arrdep=ARR');
+    const response = await fetch('https://webdatis.arinc.net/cgi-bin/datis/get_datis?station=BIKF&sessionId=MJAG9H6K5&products=DATIS&arrdep=ARR');
     const text = await response.text();
     res.type('text/plain').send(text);
   } catch (error) {
